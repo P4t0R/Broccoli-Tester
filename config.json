@@ -1,0 +1,198 @@
+{
+  "apis": [
+    {
+      "active": true,
+      "name": "GET-User",
+      "url": "https://jsonplaceholder.typicode.com/users/{DNI}",
+      "method": "GET",
+      "body": {},
+      "headers": {
+        "Accept": "application/json",
+        "X-Request-Source": "broccoli-tester"
+      }
+    },
+    {
+      "active": true,
+      "name": "Create-Post",
+      "url": "https://jsonplaceholder.typicode.com/posts",
+      "method": "POST",
+      "body": {
+        "title": "{Nombres}",
+        "body": "{Direccion}",
+        "userId": "{DNI}"
+      },
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    {
+      "active": true,
+      "name": "Agify-Age",
+      "url": "https://api.agify.io?name={Nombres}",
+      "method": "GET",
+      "body": {},
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "active": true,
+      "name": "Update-Put",
+      "url": "https://httpbin.org/put",
+      "method": "PUT",
+      "body_raw": "{\\n  \\\"phone\\\": \\\"{Telefono}\\\"\\n}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "active": true,
+      "name": "Delete-Test",
+      "url": "https://httpbin.org/delete",
+      "method": "DELETE",
+      "body": {},
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "active": true,
+      "name": "Create-User-ReqRes",
+      "url": "https://reqres.in/api/users",
+      "method": "POST",
+      "body": {
+        "name": "{Nombres}",
+        "job": "tester"
+      },
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    }
+  ],
+  "dynamic": [
+    {
+      "key": "DNI",
+      "collections": [
+        {
+          "name": "IDs1to10",
+          "values": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        }
+      ],
+      "selected": "IDs1to10"
+    },
+    {
+      "key": "Nombres",
+      "collections": [
+        {
+          "name": "Random20",
+          "values": [
+            "Agustina",
+            "Bárbara",
+            "Carolina",
+            "Daniela",
+            "Elena",
+            "Felipe",
+            "Gabriel",
+            "Hugo",
+            "Ignacio",
+            "Javier",
+            "Karen",
+            "Laura",
+            "Martín",
+            "Natalia",
+            "Octavio",
+            "Paula",
+            "Quique",
+            "Rafael",
+            "Silvia",
+            "Tomás"
+          ]
+        }
+      ],
+      "selected": "Random20"
+    },
+    {
+      "key": "Telefono",
+      "collections": [
+        {
+          "name": "Samples",
+          "values": [
+            "+51912345678",
+            "+51987654321",
+            "+51911223344"
+          ]
+        }
+      ],
+      "selected": "Samples"
+    },
+    {
+      "key": "Email",
+      "collections": [
+        {
+          "name": "Samples",
+          "values": [
+            "user01@example.com",
+            "user02@example.com",
+            "user03@example.com"
+          ]
+        }
+      ],
+      "selected": "Samples"
+    },
+    {
+      "key": "Ciudad",
+      "collections": [
+        {
+          "name": "Perú",
+          "values": [
+            "Lima",
+            "Arequipa",
+            "Trujillo"
+          ]
+        }
+      ],
+      "selected": "Perú"
+    },
+    {
+      "key": "Direccion",
+      "collections": [
+        {
+          "name": "Perú",
+          "values": [
+            "Av. Arequipa 234, Lima",
+            "Jr. de la Unión 56, Lima",
+            "Calle San Martín 101, Arequipa"
+          ]
+        }
+      ],
+      "selected": "Perú"
+    }
+  ],
+  "meta": {
+    "version": "1.1",
+    "last_saved": "2025-12-08T06:09:28.696688Z",
+    "global_token": "",
+    "last_quick_dynamic": "Ciudad",
+    "last_used_dynamic": {
+      "DNI": "IDs1to10",
+      "Nombres": "Random20",
+      "Telefono": "Samples",
+      "Email": "Samples",
+      "Ciudad": "Perú",
+      "Direccion": "Perú"
+    }
+  }
+}
