@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit,
+    QApplication, QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit,
     QTableWidget, QTableWidgetItem, QHeaderView, QPushButton, QCheckBox, QComboBox, QSpinBox, QGroupBox,
     QDialog, QDialogButtonBox, QInputDialog, QMessageBox, QSizePolicy
 )
@@ -49,11 +49,22 @@ class MainWindow(QWidget):
         main_layout.setContentsMargins(12, 12, 12, 12)
         main_layout.setSpacing(12)
 
-        # Token global
+        # Token global (top row) + subtle theme toggle
         token_layout = QHBoxLayout()
         token_layout.addWidget(QLabel("Token Global:"))
         self.global_token_input = QLineEdit()
         token_layout.addWidget(self.global_token_input)
+        token_layout.addStretch()
+        # subtle, minimal theme toggle at top (text only)
+        self.theme_toggle_btn = QPushButton("THEME")
+        self.theme_toggle_btn.setCheckable(True)
+        self.theme_toggle_btn.setFixedSize(140, 30)
+        try:
+            self.theme_toggle_btn.setStyleSheet("background: transparent; border: 1px solid rgba(0,0,0,0.08); border-radius: 6px; padding: 4px;")
+        except Exception:
+            pass
+        self.theme_toggle_btn.clicked.connect(self.toggle_theme)
+        token_layout.addWidget(self.theme_toggle_btn)
         main_layout.addLayout(token_layout)
 
         # Quick dynamic selector
@@ -94,6 +105,10 @@ class MainWindow(QWidget):
             self.cycle_quick_btn.setAutoDefault(False)
         except Exception:
             pass
+
+        
+
+        
         self.cycle_quick_btn.setEnabled(True)
         self.cycle_quick_btn.setToolTip('Ciclar la colección rápida')
         top_h.addWidget(self.cycle_quick_btn)
@@ -135,7 +150,6 @@ class MainWindow(QWidget):
         self.token_input = QLineEdit()
         for label_text, widget in [("Nombre:", self.name_input), ("URL:", self.url_input), ("Método:", self.method_input), ("Token (opcional):", self.token_input)]:
             edit_layout.addWidget(QLabel(label_text))
-            edit_layout.addWidget(widget)
         edit_layout.addWidget(QLabel("Body (JSON o template):"))
         self.body_editor = QTextEdit()
         edit_layout.addWidget(self.body_editor)
@@ -178,6 +192,8 @@ class MainWindow(QWidget):
         self.run_tests_btn.setFixedSize(160, 44)
         self.run_tests_btn.clicked.connect(self.execute_requests)
         footer.addWidget(self.run_tests_btn)
+
+    # footer continues (run/config buttons kept minimal)
 
         main_layout.addLayout(footer)
 
@@ -451,6 +467,14 @@ class MainWindow(QWidget):
                 if key:
                     last_used[key] = sel or last_used.get(key)
             meta['last_used_dynamic'] = last_used
+            # persist theme preference if UI exposes it
+            try:
+                if hasattr(self, 'theme_toggle_btn'):
+                    meta['theme'] = 'dark' if self.theme_toggle_btn.isChecked() else 'light'
+                else:
+                    meta['theme'] = meta.get('theme', 'light')
+            except Exception:
+                meta['theme'] = meta.get('theme', 'light')
             self.config_data['meta'] = meta
         except Exception:
             pass
@@ -472,6 +496,128 @@ class MainWindow(QWidget):
             QMessageBox.information(self, 'Configuración', 'Configuración cargada desde disco.')
         except Exception as e:
             QMessageBox.warning(self, 'Error', f'No se pudo cargar la configuración: {e}')
+
+        # after loading config, try to restore theme if present
+        try:
+            meta = self.config_data.get('meta', {}) or {}
+            theme = meta.get('theme', 'light')
+            try:
+                is_dark = True if theme == 'dark' else False
+                if hasattr(self, 'theme_toggle_btn'):
+                    self.theme_toggle_btn.setChecked(is_dark)
+                self.apply_theme(theme)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    # ---------- theme helpers ----------
+    def toggle_theme(self, checked: bool | None = None):
+        """Toggle between light and dark theme and persist choice in config."""
+        try:
+            if checked is None and hasattr(self, 'theme_toggle_btn'):
+                checked = self.theme_toggle_btn.isChecked()
+            theme = 'dark' if checked else 'light'
+            # apply
+            self.apply_theme(theme)
+            # update UI button symbol
+            try:
+                if hasattr(self, 'theme_toggle_btn'):
+                    self.theme_toggle_btn.setChecked(bool(checked))
+            except Exception:
+                pass
+            # persist in config meta
+            try:
+                meta = self.config_data.get('meta', {}) or {}
+                meta['theme'] = theme
+                self.config_data['meta'] = meta
+                save_config_json(self.config_data)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def apply_theme(self, theme: str):
+        """Apply a minimal theme stylesheet to the main window.
+
+        theme: 'light' or 'dark'
+        """
+        try:
+            if theme == 'dark':
+                qss = """
+                QWidget { background: #222; color: #eaeaea; }
+                QLineEdit, QTextEdit, QPlainTextEdit { background: #2b2b2b; color: #eaeaea; border: 1px solid #3a3a3a; }
+                QTableWidget { background: #252525; color: #eaeaea; gridline-color: #3a3a3a; }
+                QHeaderView::section { background: #2b2b2b; color: #eaeaea; }
+                QPushButton { background: transparent; color: #eaeaea; border: 1px solid rgba(255,255,255,0.03); padding: 4px; }
+                QPushButton:checked { background: rgba(255,255,255,0.04); }
+                QComboBox { background: #2b2b2b; color: #eaeaea; }
+                """
+            else:
+                qss = """
+                QWidget { background: #ffffff; color: #111; }
+                QLineEdit, QTextEdit, QPlainTextEdit { background: #fff; color: #111; border: 1px solid #dcdcdc; }
+                QTableWidget { background: #fff; color: #111; gridline-color: #eaeaea; }
+                QHeaderView::section { background: #f3f3f3; color: #111; }
+                QPushButton { background: transparent; color: #111; border: 1px solid rgba(0,0,0,0.03); padding: 4px; }
+                QPushButton:checked { background: rgba(0,0,0,0.02); }
+                QComboBox { background: #fff; color: #111; }
+                """
+            try:
+                self.setStyleSheet(qss)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def toggle_theme(self, checked: bool | None = None):
+        """Toggle between light and dark theme. If checked is provided, use it; otherwise toggle current."""
+        try:
+            if checked is None:
+                # toggle state
+                if hasattr(self, 'theme_toggle_btn'):
+                    new_state = not self.theme_toggle_btn.isChecked()
+                else:
+                    new_state = True
+            else:
+                new_state = bool(checked)
+            if hasattr(self, 'theme_toggle_btn'):
+                self.theme_toggle_btn.setChecked(new_state)
+                self.theme_toggle_btn.setText('Dark' if new_state else 'Light')
+            self.apply_theme('dark' if new_state else 'light')
+            # persist immediately
+            try:
+                if not self.config_data:
+                    self.config_data = {}
+                meta = self.config_data.get('meta', {}) or {}
+                meta['theme'] = 'dark' if new_state else 'light'
+                self.config_data['meta'] = meta
+                save_config_json(self.config_data)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def apply_theme(self, theme: str):
+        """Apply a minimal light/dark stylesheet to the application."""
+        try:
+            app = QApplication.instance()
+            if app is None:
+                return
+            if theme == 'dark':
+                dark_qss = """
+                QWidget { background: #2b2b2b; color: #e6e6e6; }
+                QLineEdit, QTextEdit, QPlainTextEdit { background: #3c3f41; color: #e6e6e6; }
+                QTableWidget { background: #2b2b2b; color: #e6e6e6; gridline-color: #444; }
+                QPushButton { background: #3c3f41; color: #e6e6e6; border: 1px solid #555; padding: 4px; }
+                QPushButton:checked { background: #5a5f63; }
+                QHeaderView::section { background: #3c3f41; color: #e6e6e6; }
+                """
+                app.setStyleSheet(dark_qss)
+            else:
+                app.setStyleSheet("")
+        except Exception:
+            pass
 
     # ---------- dynamic rows ----------
     def add_dynamic_row(self, key: str = "", collections: list | None = None, selected: str | None = None):
@@ -1140,6 +1286,8 @@ class MainWindow(QWidget):
             existing_apis = self.config_data.get('apis', []) if self.config_data else []
             existing = existing_apis[r] if r < len(existing_apis) else {}
             headers = existing.get('headers', {}) if existing is not None else {}
+            # token: prefer API-specific token, then editor value if editing this row, then global token
+            token = existing.get('token') if existing is not None else None
             # body can be structured (dict) or raw text stored as body_raw
             api_body = None
             api_body_raw = ''
@@ -1159,7 +1307,24 @@ class MainWindow(QWidget):
                         headers = json.loads(self.headers_editor.toPlainText())
                     except Exception:
                         headers = {}
-            api_entry = {'name': name, 'url': url, 'method': method, 'headers': headers, 'body': api_body, 'body_raw': api_body_raw}
+            # if user is editing this row and provided token in the edit panel, prefer it
+            if not token and self.editing_row == r:
+                try:
+                    t = self.token_input.text().strip()
+                    if t:
+                        token = t
+                except Exception:
+                    pass
+            # fallback to global token if still empty
+            if not token:
+                try:
+                    gt = self.global_token_input.text().strip()
+                    if gt:
+                        token = gt
+                except Exception:
+                    pass
+
+            api_entry = {'name': name, 'url': url, 'method': method, 'headers': headers, 'token': token, 'body': api_body, 'body_raw': api_body_raw}
             apis.append(api_entry)
         # validate placeholders across apis
         missing = set()

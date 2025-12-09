@@ -193,6 +193,7 @@
       "Email": "Samples",
       "Ciudad": "Perú",
       "Direccion": "Perú"
-    }
+    },
+    "theme": "light"
   }
 }
