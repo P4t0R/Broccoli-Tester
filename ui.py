@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit,
+    QApplication, QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit,
     QTableWidget, QTableWidgetItem, QHeaderView, QPushButton, QCheckBox, QComboBox, QSpinBox, QGroupBox,
     QDialog, QDialogButtonBox, QInputDialog, QMessageBox, QSizePolicy
 )
@@ -54,6 +54,19 @@ class MainWindow(QWidget):
         token_layout.addWidget(QLabel("Token Global:"))
         self.global_token_input = QLineEdit()
         token_layout.addWidget(self.global_token_input)
+        # subtle theme toggle placed at the top (minimalist)
+        token_layout.addStretch()
+        self.theme_toggle_btn = QPushButton("☀")
+        self.theme_toggle_btn.setCheckable(True)
+        self.theme_toggle_btn.setFlat(True)
+        self.theme_toggle_btn.setFixedSize(36, 26)
+        # minimal styling
+        try:
+            self.theme_toggle_btn.setStyleSheet('border: none; background: transparent; font-size: 14px;')
+        except Exception:
+            pass
+        self.theme_toggle_btn.clicked.connect(self.toggle_theme)
+        token_layout.addWidget(self.theme_toggle_btn)
         main_layout.addLayout(token_layout)
 
         # Quick dynamic selector
@@ -94,6 +107,10 @@ class MainWindow(QWidget):
             self.cycle_quick_btn.setAutoDefault(False)
         except Exception:
             pass
+
+        
+
+        
         self.cycle_quick_btn.setEnabled(True)
         self.cycle_quick_btn.setToolTip('Ciclar la colección rápida')
         top_h.addWidget(self.cycle_quick_btn)
@@ -178,6 +195,13 @@ class MainWindow(QWidget):
         self.run_tests_btn.setFixedSize(160, 44)
         self.run_tests_btn.clicked.connect(self.execute_requests)
         footer.addWidget(self.run_tests_btn)
+
+        # theme toggle (Light / Dark)
+        self.theme_toggle_btn = QPushButton("Tema: Claro")
+        self.theme_toggle_btn.setCheckable(True)
+        self.theme_toggle_btn.setFixedSize(120, 34)
+        self.theme_toggle_btn.clicked.connect(self.toggle_theme)
+        footer.addWidget(self.theme_toggle_btn)
 
         main_layout.addLayout(footer)
 
@@ -451,6 +475,14 @@ class MainWindow(QWidget):
                 if key:
                     last_used[key] = sel or last_used.get(key)
             meta['last_used_dynamic'] = last_used
+            # persist theme preference if UI exposes it
+            try:
+                if hasattr(self, 'theme_toggle_btn'):
+                    meta['theme'] = 'dark' if self.theme_toggle_btn.isChecked() else 'light'
+                else:
+                    meta['theme'] = meta.get('theme', 'light')
+            except Exception:
+                meta['theme'] = meta.get('theme', 'light')
             self.config_data['meta'] = meta
         except Exception:
             pass
@@ -472,6 +504,55 @@ class MainWindow(QWidget):
             QMessageBox.information(self, 'Configuración', 'Configuración cargada desde disco.')
         except Exception as e:
             QMessageBox.warning(self, 'Error', f'No se pudo cargar la configuración: {e}')
+
+    def toggle_theme(self, checked: bool | None = None):
+        """Toggle between light and dark theme. If checked is provided, use it; otherwise toggle current."""
+        try:
+            if checked is None:
+                # toggle state
+                if hasattr(self, 'theme_toggle_btn'):
+                    new_state = not self.theme_toggle_btn.isChecked()
+                else:
+                    new_state = True
+            else:
+                new_state = bool(checked)
+            if hasattr(self, 'theme_toggle_btn'):
+                self.theme_toggle_btn.setChecked(new_state)
+                self.theme_toggle_btn.setText('Tema: Oscuro' if new_state else 'Tema: Claro')
+            self.apply_theme('dark' if new_state else 'light')
+            # persist immediately
+            try:
+                if not self.config_data:
+                    self.config_data = {}
+                meta = self.config_data.get('meta', {}) or {}
+                meta['theme'] = 'dark' if new_state else 'light'
+                self.config_data['meta'] = meta
+                save_config_json(self.config_data)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def apply_theme(self, theme: str):
+        """Apply a minimal light/dark stylesheet to the application."""
+        try:
+            app = QApplication.instance()
+            if app is None:
+                return
+            if theme == 'dark':
+                dark_qss = """
+                QWidget { background: #2b2b2b; color: #e6e6e6; }
+                QLineEdit, QTextEdit, QPlainTextEdit { background: #3c3f41; color: #e6e6e6; }
+                QTableWidget { background: #2b2b2b; color: #e6e6e6; gridline-color: #444; }
+                QPushButton { background: #3c3f41; color: #e6e6e6; border: 1px solid #555; padding: 4px; }
+                QPushButton:checked { background: #5a5f63; }
+                QHeaderView::section { background: #3c3f41; color: #e6e6e6; }
+                """
+                app.setStyleSheet(dark_qss)
+            else:
+                app.setStyleSheet("")
+        except Exception:
+            pass
 
     # ---------- dynamic rows ----------
     def add_dynamic_row(self, key: str = "", collections: list | None = None, selected: str | None = None):
