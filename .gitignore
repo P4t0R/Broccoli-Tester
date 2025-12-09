@@ -1,0 +1,59 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Python tooling
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Secrets / env files
+.env
+.env.local
+secrets.json
+
+# Databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Results and runtime outputs
+resultados/
+results/
+
+# Large binary artifacts (compiled libs, wheels)
+*.so
+*.dll
+*.dylib
+*.pyd
+*.whl
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
