@@ -49,20 +49,18 @@ class MainWindow(QWidget):
         main_layout.setContentsMargins(12, 12, 12, 12)
         main_layout.setSpacing(12)
 
-        # Token global
+        # Token global (top row) + subtle theme toggle
         token_layout = QHBoxLayout()
         token_layout.addWidget(QLabel("Token Global:"))
         self.global_token_input = QLineEdit()
         token_layout.addWidget(self.global_token_input)
-        # subtle theme toggle placed at the top (minimalist)
         token_layout.addStretch()
-        self.theme_toggle_btn = QPushButton("☀")
+        # subtle, minimal theme toggle at top (text only)
+        self.theme_toggle_btn = QPushButton("THEME")
         self.theme_toggle_btn.setCheckable(True)
-        self.theme_toggle_btn.setFlat(True)
-        self.theme_toggle_btn.setFixedSize(36, 26)
-        # minimal styling
+        self.theme_toggle_btn.setFixedSize(140, 30)
         try:
-            self.theme_toggle_btn.setStyleSheet('border: none; background: transparent; font-size: 14px;')
+            self.theme_toggle_btn.setStyleSheet("background: transparent; border: 1px solid rgba(0,0,0,0.08); border-radius: 6px; padding: 4px;")
         except Exception:
             pass
         self.theme_toggle_btn.clicked.connect(self.toggle_theme)
@@ -152,7 +150,6 @@ class MainWindow(QWidget):
         self.token_input = QLineEdit()
         for label_text, widget in [("Nombre:", self.name_input), ("URL:", self.url_input), ("Método:", self.method_input), ("Token (opcional):", self.token_input)]:
             edit_layout.addWidget(QLabel(label_text))
-            edit_layout.addWidget(widget)
         edit_layout.addWidget(QLabel("Body (JSON o template):"))
         self.body_editor = QTextEdit()
         edit_layout.addWidget(self.body_editor)
@@ -196,12 +193,7 @@ class MainWindow(QWidget):
         self.run_tests_btn.clicked.connect(self.execute_requests)
         footer.addWidget(self.run_tests_btn)
 
-        # theme toggle (Light / Dark)
-        self.theme_toggle_btn = QPushButton("Tema: Claro")
-        self.theme_toggle_btn.setCheckable(True)
-        self.theme_toggle_btn.setFixedSize(120, 34)
-        self.theme_toggle_btn.clicked.connect(self.toggle_theme)
-        footer.addWidget(self.theme_toggle_btn)
+    # footer continues (run/config buttons kept minimal)
 
         main_layout.addLayout(footer)
 
@@ -505,6 +497,79 @@ class MainWindow(QWidget):
         except Exception as e:
             QMessageBox.warning(self, 'Error', f'No se pudo cargar la configuración: {e}')
 
+        # after loading config, try to restore theme if present
+        try:
+            meta = self.config_data.get('meta', {}) or {}
+            theme = meta.get('theme', 'light')
+            try:
+                is_dark = True if theme == 'dark' else False
+                if hasattr(self, 'theme_toggle_btn'):
+                    self.theme_toggle_btn.setChecked(is_dark)
+                self.apply_theme(theme)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    # ---------- theme helpers ----------
+    def toggle_theme(self, checked: bool | None = None):
+        """Toggle between light and dark theme and persist choice in config."""
+        try:
+            if checked is None and hasattr(self, 'theme_toggle_btn'):
+                checked = self.theme_toggle_btn.isChecked()
+            theme = 'dark' if checked else 'light'
+            # apply
+            self.apply_theme(theme)
+            # update UI button symbol
+            try:
+                if hasattr(self, 'theme_toggle_btn'):
+                    self.theme_toggle_btn.setChecked(bool(checked))
+            except Exception:
+                pass
+            # persist in config meta
+            try:
+                meta = self.config_data.get('meta', {}) or {}
+                meta['theme'] = theme
+                self.config_data['meta'] = meta
+                save_config_json(self.config_data)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def apply_theme(self, theme: str):
+        """Apply a minimal theme stylesheet to the main window.
+
+        theme: 'light' or 'dark'
+        """
+        try:
+            if theme == 'dark':
+                qss = """
+                QWidget { background: #222; color: #eaeaea; }
+                QLineEdit, QTextEdit, QPlainTextEdit { background: #2b2b2b; color: #eaeaea; border: 1px solid #3a3a3a; }
+                QTableWidget { background: #252525; color: #eaeaea; gridline-color: #3a3a3a; }
+                QHeaderView::section { background: #2b2b2b; color: #eaeaea; }
+                QPushButton { background: transparent; color: #eaeaea; border: 1px solid rgba(255,255,255,0.03); padding: 4px; }
+                QPushButton:checked { background: rgba(255,255,255,0.04); }
+                QComboBox { background: #2b2b2b; color: #eaeaea; }
+                """
+            else:
+                qss = """
+                QWidget { background: #ffffff; color: #111; }
+                QLineEdit, QTextEdit, QPlainTextEdit { background: #fff; color: #111; border: 1px solid #dcdcdc; }
+                QTableWidget { background: #fff; color: #111; gridline-color: #eaeaea; }
+                QHeaderView::section { background: #f3f3f3; color: #111; }
+                QPushButton { background: transparent; color: #111; border: 1px solid rgba(0,0,0,0.03); padding: 4px; }
+                QPushButton:checked { background: rgba(0,0,0,0.02); }
+                QComboBox { background: #fff; color: #111; }
+                """
+            try:
+                self.setStyleSheet(qss)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
     def toggle_theme(self, checked: bool | None = None):
         """Toggle between light and dark theme. If checked is provided, use it; otherwise toggle current."""
         try:
@@ -518,7 +583,7 @@ class MainWindow(QWidget):
                 new_state = bool(checked)
             if hasattr(self, 'theme_toggle_btn'):
                 self.theme_toggle_btn.setChecked(new_state)
-                self.theme_toggle_btn.setText('Tema: Oscuro' if new_state else 'Tema: Claro')
+                self.theme_toggle_btn.setText('Dark' if new_state else 'Light')
             self.apply_theme('dark' if new_state else 'light')
             # persist immediately
             try:
