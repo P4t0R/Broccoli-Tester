@@ -1140,6 +1140,8 @@ class MainWindow(QWidget):
             existing_apis = self.config_data.get('apis', []) if self.config_data else []
             existing = existing_apis[r] if r < len(existing_apis) else {}
             headers = existing.get('headers', {}) if existing is not None else {}
+            # token: prefer API-specific token, then editor value if editing this row, then global token
+            token = existing.get('token') if existing is not None else None
             # body can be structured (dict) or raw text stored as body_raw
             api_body = None
             api_body_raw = ''
@@ -1159,7 +1161,24 @@ class MainWindow(QWidget):
                         headers = json.loads(self.headers_editor.toPlainText())
                     except Exception:
                         headers = {}
-            api_entry = {'name': name, 'url': url, 'method': method, 'headers': headers, 'body': api_body, 'body_raw': api_body_raw}
+            # if user is editing this row and provided token in the edit panel, prefer it
+            if not token and self.editing_row == r:
+                try:
+                    t = self.token_input.text().strip()
+                    if t:
+                        token = t
+                except Exception:
+                    pass
+            # fallback to global token if still empty
+            if not token:
+                try:
+                    gt = self.global_token_input.text().strip()
+                    if gt:
+                        token = gt
+                except Exception:
+                    pass
+
+            api_entry = {'name': name, 'url': url, 'method': method, 'headers': headers, 'token': token, 'body': api_body, 'body_raw': api_body_raw}
             apis.append(api_entry)
         # validate placeholders across apis
         missing = set()

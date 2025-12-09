@@ -55,16 +55,38 @@ async def _fetch(session, api_conf: Dict, mapping: Dict[str, str], seq: int | No
     method = api_conf.get('method', 'GET').upper()
     url = _replace_placeholders_in_str(api_conf.get('url', ''), mapping)
     api_name = api_conf.get('name', '<unnamed>')
-    token = _replace_placeholders_in_str(api_conf.get('token', ''), mapping)
+    # token may be None; coerce to empty string and replace placeholders safely
+    token_raw = api_conf.get('token', '')
+    if token_raw is None:
+        token_raw = ''
+    try:
+        token = _replace_placeholders_in_str(str(token_raw), mapping)
+    except Exception:
+        token = ''
     headers = {}
     try:
         headers = _replace_in_obj(api_conf.get('headers', {}) or {}, mapping)
     except Exception:
         headers = api_conf.get('headers', {}) or {}
-    # add token if present
+    # add token if present — prefer Authorization header and ensure Bearer prefix
     if token:
         try:
-            headers.setdefault('Authorization', token)
+            tval = str(token).strip()
+            # ensure token uses Bearer scheme
+            if not tval.lower().startswith('bearer '):
+                tval = f'Bearer {tval}'
+            # find existing Authorization header case-insensitively
+            existing_key = None
+            for k in list(headers.keys()):
+                if k.lower() == 'authorization':
+                    existing_key = k
+                    break
+            if existing_key:
+                # only set if empty
+                if not headers.get(existing_key):
+                    headers[existing_key] = tval
+            else:
+                headers['Authorization'] = tval
         except Exception:
             pass
 
